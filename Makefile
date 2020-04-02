@@ -27,6 +27,7 @@ release:
 	docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) up test
 
 clean:
-	docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) down
-	docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) down
+	docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) down -v
+	docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) down -v
 	docker images -q -f dangling=true -f label=application=$(REPO_NAME) | xargs -I ARGS docker rmi -f ARGS
+	docker volume ls -qf dangling=true | xargs -r docker volume rm
