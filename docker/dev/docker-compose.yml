@@ -15,8 +15,8 @@ test:
 builder:
   build: ../../
   dockerfile: docker/dev/Dockerfile
-  volumes:
-    - ../../target:/wheelhouse
+  # volumes:
+  #   - ../../target:/wheelhouse
   volumes_from:
     - cache
   entrypoint: "entrypoint.sh"
