@@ -1,0 +1,3 @@
+FROM nginx
+
+COPY todobackend.conf /etc/nginx/conf.d/todobackend.conf
