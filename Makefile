@@ -92,6 +92,21 @@ buildtag:
 	@ $(foreach tag, $(BUILDTAG_ARGS), docker tag $(IMAGE_ID) $(DOCKER_REGISTRY)/$(ORG_NAME)/$(REPO_NAME):$(tag).$(BUILD_TAG);)
 	${INFO} "Tag complete"
 
+login:
+	${INFO} "Logging in to Docker registry $$DOCKER_REGISTRY..."
+	@ docker login -u $$DOCKER_USER -p $$DOCKER_PASSWORD -e $$DOCKER_EMAIL $(DOCKER_REGISTRY_AUTH)
+	${INFO} "Logged in to Docker registry $$DOCKER_REGISTRY"
+
+logout:
+	${INFO} "Logging out of Docker registry $$DOCKER_REGISTRY..."
+	@ docker logout
+	${INFO} "Logged out of Docker registry $$DOCKER_REGISTRY"	
+
+publish:
+	${INFO} "Publishing release image $(IMAGE_ID) to $(DOCKER_REGISTRY)/$(ORG_NAME)/$(REPO_NAME)..."
+	@ $(foreach tag,$(shell echo $(REPO_EXPR)), docker push $(tag);)
+	${INFO} "Publish complete"
+
 # Costmetic
 YELLOW := "\e[1;33m"
 NC := "\e[0m"
