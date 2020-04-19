@@ -23,8 +23,12 @@ BUILD_EXPRESSION := $(shell $(BUILD_TAG_EXPRESSION))
 # Build tag - default to build expression if not defined
 BUILD_TAG ?= $(BUILD_EXPRESSION)
 
-# Docker registry
+# Use these settings to specify a custom Docker registry
 DOCKER_REGISTRY ?= docker.io
+
+# WARNING: Set DOCKER_REGISTRY_AUTH to empty for Docker Hub
+# Set DOCKER_REGISTRY_AUTH to auth endpoint for private Docker registry
+DOCKER_REGISTRY_AUTH ?=
 
 # Check and Inspect logic
 INSPECT := $$(docker-compose -p $$1 -f $$2 ps -q $$3 | xargs -I ARGS docker inspect -f "{{ .State.ExitCode }}" ARGS)
@@ -98,7 +102,7 @@ buildtag:
 
 login:
 	${INFO} "Logging in to Docker registry $$DOCKER_REGISTRY..."
-	@ docker login -u $$DOCKER_USER -p $$DOCKER_PASSWORD -e $$DOCKER_EMAIL $(DOCKER_REGISTRY_AUTH)
+	@ docker login -u $$DOCKER_USER -p $$DOCKER_PASSWORD $(DOCKER_REGISTRY_AUTH)
 	${INFO} "Logged in to Docker registry $$DOCKER_REGISTRY"
 
 logout:
