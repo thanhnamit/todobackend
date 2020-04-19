@@ -58,3 +58,12 @@ db:
     MYSQL_USER: todo
     MYSQL_PASSWORD: password
     MYSQL_ROOT_PASSWORD: password
+
+agent:
+  image: jmenga/ansible
+  links:
+    - db
+  environment:
+    PROBE_HOST: "db"
+    PROBE_PORT: "3306"
+  command: ["probe.yml"]

@@ -37,3 +37,12 @@ cache:
     - /tmp/cache:/cache
     - /build
   entrypoint: "true"
+
+agent:
+  image: jmenga/ansible
+  links:
+    - db
+  environment:
+    PROBE_HOST: "db"
+    PROBE_PORT: "3306"
+  command: ["probe.yml"]
