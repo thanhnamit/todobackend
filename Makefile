@@ -4,8 +4,8 @@ ORG_NAME ?= nnguyen
 REPO_NAME ?= todobackend
 
 # Filenames
-DEV_COMPOSE_FILE := docker/dev/docker-compose.yml
-REL_COMPOSE_FILE := docker/release/docker-compose.yml
+DEV_COMPOSE_FILE := docker/dev/docker-compose-v2.yml
+REL_COMPOSE_FILE := docker/release/docker-compose-v2.yml
 
 # Docker Compose Project names
 REL_PROJECT := $(PROJECT_NAME)$(BUILD_ID)
@@ -13,6 +13,15 @@ DEV_PROJECT := $(REL_PROJECT)dev
 
 # App service name - match docker compose release specification app service name
 APP_SERVICE_NAME := app
+
+# Build tag expression
+BUILD_TAG_EXPRESSION ?= date -u +%Y%m%d%H%M%S
+
+# Execute shell expression
+BUILD_EXPRESSION := $(shell $(BUILD_TAG_EXPRESSION))
+
+# Build tag - default to build expression if not defined
+BUILD_TAG ?= $(BUILD_EXPRESSION)
 
 # Docker registry
 DOCKER_REGISTRY ?= docker.io
@@ -29,9 +38,10 @@ CHECK := @bash -c '\
 test:
 	# ${INFO} "Pull latest images..."
 	# @ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) pull 
+	${INFO} "Create cache volumes.."
+	@ docker volume create --name cache
 	${INFO} "Testing. Build images..."
 	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build test
-	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build cache
 	${INFO} "Running test..."
 	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) up test
 	@ docker cp $$(docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) ps -q test):/reports/. reports
@@ -51,7 +61,6 @@ release:
 	# @ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) pull test
 	${INFO} "Start release..."
 	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build app
-	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build webroot
 	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build --pull nginx
 	${INFO} "Collects static..."
 	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) run --rm app manage.py collectstatic --noinput
@@ -71,9 +80,16 @@ clean:
 	@ docker volume ls -qf dangling=true | xargs -I ARGS docker volume rm ARGS
 	${INFO} "Clean complete..."
 
+# Logical tagging example: make tag 0.1 latest $(git rev-parse --short HEAD)
 tag:
 	${INFO} "Tagging release image with tags $(TAG_ARGS)..."
 	@ $(foreach tag, $(TAG_ARGS), docker tag $(IMAGE_ID) $(DOCKER_REGISTRY)/$(ORG_NAME)/$(REPO_NAME):$(tag);)
+	${INFO} "Tag complete"
+
+# example make buildtag 0.1 $(git rev-parse --abbrev-ref HEAD)
+buildtag:
+	${INFO} "Tagging release image with suffix ${BUILD_TAG} and build tags $(BUILDTAG_ARGS)..."
+	@ $(foreach tag, $(BUILDTAG_ARGS), docker tag $(IMAGE_ID) $(DOCKER_REGISTRY)/$(ORG_NAME)/$(REPO_NAME):$(tag).$(BUILD_TAG);)
 	${INFO} "Tag complete"
 
 # Costmetic
@@ -93,11 +109,20 @@ APP_CONTAINER_ID := $$(docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) p
 # Get image id
 IMAGE_ID := $$(docker inspect -f '{{ .Image }}' $(APP_CONTAINER_ID))
 
+# Extract build tag arguments
+ifeq (buildtag,$(firstword $(MAKECMDGOALS)))
+ BUILDTAG_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+ ifeq ($(BUILDTAG_ARGS),)
+  $(error You must specify a tag)
+ endif
+ $(eval $(BUILDTAG_ARGS):;@:)
+endif
+
 # Extract tag arguments
-ifeq (tag, $(firstword $(MAKECMDGOALS)))
-	TAG_ARGS := $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS))
-	ifeq ($(TAG_ARGS),)
-		$(error You must specify a tag)
-	endif
-	$(eval $(TAG_ARGS):;@:)
+ifeq (tag,$(firstword $(MAKECMDGOALS)))
+ TAG_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+ ifeq ($(TAG_ARGS),)
+  $(error You must specify a tag)
+ endif
+ $(eval $(TAG_ARGS):;@:)
 endif
