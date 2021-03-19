@@ -11,7 +11,7 @@ setup(
                       "autopep8 == 1.5",
                       "Django == 3.0.3",
                       "django-cors-headers == 3.2.1",
-                      "djangorestframework == 3.11.0",
+                      "djangorestframework == 3.11.2",
                       "mysqlclient == 1.4.6",
                       "pycodestyle == 2.5.0",
                       "pytz == 2019.3",
