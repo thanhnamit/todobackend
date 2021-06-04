@@ -9,7 +9,7 @@ setup(
   scripts = ["manage.py"],
   install_requires = ["asgiref == 3.2.3",
                       "autopep8 == 1.5",
-                      "Django == 3.0.3",
+                      "Django == 3.1.9",
                       "django-cors-headers == 3.2.1",
                       "djangorestframework == 3.11.0",
                       "mysqlclient == 1.4.6",
